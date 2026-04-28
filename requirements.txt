@@ -11,3 +11,4 @@ pypdf
 numpy
 tiktoken
 gdown
+huggingface_hub
