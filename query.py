@@ -1,11 +1,43 @@
+import os
+import gdown
+import streamlit as st
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from huggingface_hub import hf_hub_download
 
+# ── Load API key ───────────────────────────────────────────────────
+# Locally reads from .chatenv
+# On Streamlit Cloud reads from st.secrets
 load_dotenv(".chatenv")
+if "OPENAI_API_KEY" in st.secrets:
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+
+
+
+# ── Download FAISS index from Hugging Face if not present ──────────
+HF_REPO_ID = "BipinSunny/india-reports-faiss-index"
+
+if not os.path.exists("faiss_index/index.faiss"):
+    print("Downloading FAISS index from Hugging Face...")
+    os.makedirs("faiss_index", exist_ok=True)
+
+    hf_hub_download(
+        repo_id=HF_REPO_ID,
+        filename="index.faiss",
+        repo_type="dataset",
+        local_dir="faiss_index"
+    )
+    hf_hub_download(
+        repo_id=HF_REPO_ID,
+        filename="index.pkl",
+        repo_type="dataset",
+        local_dir="faiss_index"
+    )
+    print("Download complete.")
 
 # ── Load FAISS index ───────────────────────────────────────────────
 embedder = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -16,7 +48,7 @@ vectorstore = FAISS.load_local(
     allow_dangerous_deserialization=True
 )
 
-# ── Set up retriever and LLM ───────────────────────────────────────
+# ── Retriever and LLM ──────────────────────────────────────────────
 retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
 
 llm = ChatOpenAI(
@@ -25,7 +57,6 @@ llm = ChatOpenAI(
 )
 
 # ── Prompt template ────────────────────────────────────────────────
-
 prompt_template = """
 You are an expert analyst of Indian government education and health reports
 spanning 2020 to 2025.
@@ -51,45 +82,32 @@ Question:
 
 Answer:
 """
+
 prompt = PromptTemplate(
     template=prompt_template,
     input_variables=["context", "question"]
 )
 
-# ── Helper to format retrieved chunks into one string ─────────────
+# ── Format docs helper ─────────────────────────────────────────────
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-# ── Build the chain using pipe operator ───────────────────────────
-# This is the modern LangChain way — called LCEL (LangChain Expression Language)
-# Read it left to right:
-# 1. retriever fetches chunks, question passes through
-# 2. prompt fills {context} and {question}
-# 3. llm generates the answer
-# 4. StrOutputParser extracts the text from the LLM response object
+# ── Build chain ────────────────────────────────────────────────────
 chain = (
     {
-        "context": retriever | format_docs,  # retrieve chunks → format as string
-        "question": RunnablePassthrough()    # pass question through unchanged
+        "context": retriever | format_docs,
+        "question": RunnablePassthrough()
     }
-    | prompt          # fill the template
-    | llm             # generate answer
-    | StrOutputParser()  # extract text from response
+    | prompt
+    | llm
+    | StrOutputParser()
 )
 
-# ── The ask function ───────────────────────────────────────────────
+# ── Ask function ───────────────────────────────────────────────────
 def ask(question: str) -> dict:
-    """
-    Takes a question string.
-    Returns answer + citations.
-    """
-    # Get answer from chain
     answer = chain.invoke(question)
-
-    # Get source documents separately for citations
     source_docs = retriever.invoke(question)
 
-    # Build deduplicated citation list
     seen = set()
     citations = []
     for doc in source_docs:
@@ -109,10 +127,8 @@ def ask(question: str) -> dict:
 if __name__ == "__main__":
     test_question = "What was the gross enrollment ratio in higher education?"
     print(f"Question: {test_question}\n")
-
     result = ask(test_question)
-
     print(f"Answer:\n{result['answer']}\n")
-    print(f"Sources:")
+    print("Sources:")
     for citation in result["citations"]:
         print(f"  - {citation}")
