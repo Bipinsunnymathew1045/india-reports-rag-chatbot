@@ -10,7 +10,10 @@ st.set_page_config(
 
 # ── Header ─────────────────────────────────────────────────────────
 st.title("📚 India Education & Health Reports Chatbot")
-st.caption("Powered by RAG — answers grounded in official Government of India reports 2020–2025")
+st.caption("Powered by RAG — answers grounded in official Government "
+           "of India reports 2020–2025 · Page numbers refer to PDF "
+           "page positions and may vary slightly from printed pages")
+
 
 # ── Sidebar ────────────────────────────────────────────────────────
 with st.sidebar:
@@ -101,7 +104,7 @@ if question := st.chat_input("Ask anything about India's education or health rep
         with st.expander("📄 Sources"):
             for citation in result["citations"]:
                 st.write(f"• {citation}")
-
+         
     st.session_state.messages.append({
         "role": "assistant",
         "content": result["answer"],

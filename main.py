@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 import numpy as np
 load_dotenv(".chatenv")
+#load_dotenv()
+#print("API KEY FOUND:", os.getenv("OPENAI_API_KEY") is not None)  # add this
+# Initialize the embedding model
+#print("KEY VALUE:", os.getenv("OPENAI_API_KEY"))
 embedder = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # Embed some sentences
