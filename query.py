@@ -112,7 +112,7 @@ def ask(question: str) -> dict:
     citations = []
     for doc in source_docs:
         source = doc.metadata["source"].replace("data\\", "").replace("data/", "")
-        page = doc.metadata["page"] + 1
+        page = doc.metadata.get("page_label", doc.metadata["page"] + 1)
         key = f"{source}_p{page}"
         if key not in seen:
             seen.add(key)
