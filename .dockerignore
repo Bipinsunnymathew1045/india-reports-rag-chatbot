@@ -1,0 +1,9 @@
+.chatenv
+.env
+chatenv/
+faiss_index/
+data/
+__pycache__/
+*.pyc
+.git/
+eval_results.db
