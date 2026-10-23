@@ -1,5 +1,33 @@
 import streamlit as st
-from query import ask
+
+import requests
+
+RAILWAY_API_URL = "https://india-reports-rag-chatbot-production.up.railway.app"
+
+def ask(question: str) -> dict:
+    """Calls Railway API instead of running RAG locally."""
+    try:
+        response = requests.post(
+            f"{RAILWAY_API_URL}/ask",
+            json={"question": question},
+            timeout=60
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "answer": data["answer"],
+                "citations": data["citations"]
+            }
+        else:
+            return {
+                "answer": f"API error: {response.status_code}",
+                "citations": []
+            }
+    except Exception as e:
+        return {
+            "answer": f"Could not reach API: {str(e)}",
+            "citations": []
+        }
 
 # ── Page configuration ─────────────────────────────────────────────
 st.set_page_config(
