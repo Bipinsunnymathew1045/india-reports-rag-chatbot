@@ -64,3 +64,18 @@ RAGAS · SQLite · Pandas · Streamlit · LangChain · OpenAI
 - How many Ayushman Bharat cards were created?
 - What is the National Education Policy about?
 - How many AIIMS hospitals exist in India?
+
+## Production API
+
+Live REST API deployed on Railway with Docker:
+https://india-reports-rag-chatbot-production.up.railway.app
+
+
+Endpoints:
+- GET  /health → health check
+- GET  /stats  → request statistics  
+- GET  /metrics → Prometheus metrics
+- POST /ask    → ask a question
+
+Interactive docs:
+https://india-reports-rag-chatbot-production.up.railway.app/docs
